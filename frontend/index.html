@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Paper Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F3F4F6;
+            --surface: #FFFFFF;
+            --text: #1F2937;
+            --text-light: #6B7280;
+            --border: #E5E7EB;
+            --success: #10B981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-light);
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Form Elements */
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: var(--text-light);
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background-color: var(--surface);
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 0.4rem 0.9rem;
+            font-size: 0.85rem;
+        }
+
+        button.secondary:hover {
+            background-color: rgba(79, 70, 229, 0.08);
+        }
+
+        button.link-btn {
+            background: none;
+            color: var(--primary);
+            padding: 0;
+            font-size: 0.9rem;
+            text-decoration: underline;
+        }
+
+        button.link-btn:hover {
+            background: none;
+            color: var(--primary-hover);
+        }
+
+        /* Dashboard Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .tab-btn {
+            background: none;
+            color: var(--text-light);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .tab-btn.active {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        /* Results Area */
+        .result-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+
+        .meta-info {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            border-radius: 8px;
+            color: #065F46;
+        }
+
+        .loader {
+            display: none;
+            margin-top: 1rem;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .loading .loader {
+            display: block;
+        }
+
+        /* Papers list */
+        .papers-summary {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .papers-summary strong {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .paper-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.9rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.6rem;
+            background: var(--bg);
+        }
+
+        .paper-item.active-paper {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.06);
+        }
+
+        .paper-item-info {
+            overflow: hidden;
+        }
+
+        .paper-item-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 380px;
+        }
+
+        .paper-item-meta {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .paper-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        /* Chunk viewer */
+        .chunk-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            background: var(--surface);
+        }
+
+        .chunk-item-header {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .chunk-badge {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-weight: 600;
+        }
+
+        .chunk-text {
+            font-size: 0.9rem;
+            color: var(--text);
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>AI Paper Assistant</h1>
+        <p>Upload a research paper, search its contents, ask questions, or generate a review.</p>
+    </header>
+
+    <!-- Upload Section -->
+    <div class="card" id="uploadSection">
+        <h2>1. Upload Paper</h2>
+        <p style="color: var(--text-light); margin-bottom: 1rem;">Select a PDF file to process and embed into the vector database.</p>
+        <input type="file" id="pdfFile" accept="application/pdf">
+        <button id="uploadBtn" onclick="uploadPaper()">Upload & Process</button>
+        <div id="uploadLoader" class="loader">Processing document... this may take a moment.</div>
+
+        <div id="uploadSuccess" class="meta-info hidden">
+            <!-- Upload stats will be injected here -->
+        </div>
+    </div>
+
+    <!-- Uploaded Papers List Section -->
+    <div class="card" id="papersListSection">
+        <div class="card-header">
+            <h2>2. Uploaded Papers</h2>
+            <button class="secondary" onclick="loadPapersList()">Refresh</button>
+        </div>
+        <div id="papersSummary" class="papers-summary">Loading...</div>
+        <div id="papersList"></div>
+    </div>
+
+    <!-- Chunk Viewer Section (for verifying extracted content) -->
+    <div class="card hidden" id="chunkViewerSection">
+        <div class="card-header">
+            <h2 id="chunkViewerTitle">Chunks</h2>
+            <button class="secondary" onclick="closeChunkViewer()">Close</button>
+        </div>
+        <p style="color: var(--text-light); margin-bottom: 1rem;">
+            This shows exactly what was extracted from the PDF, page by page,
+            so you can verify the information is correct before trusting the AI's answers.
+        </p>
+        <div id="chunkViewerLoader" class="loader" style="display:block;">Loading chunks...</div>
+        <div id="chunkViewerList"></div>
+    </div>
+
+    <!-- Workspace Section (Hidden until a paper is selected) -->
+    <div id="workspace" class="hidden">
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('ask')">Ask Question</button>
+                <button class="tab-btn" onclick="switchTab('search')">Search Chunks</button>
+                <button class="tab-btn" onclick="switchTab('review')">Generate Review</button>
+            </div>
+
+            <p id="activePaperLabel" style="color: var(--text-light); margin-bottom: 1rem; font-size: 0.9rem;"></p>
+
+            <!-- Ask Tab -->
+            <div id="tab-ask" class="tab-content">
+                <h2>Ask a Question</h2>
+                <input type="text" id="askInput" placeholder="e.g. What is the main methodology used in this paper?">
+                <button onclick="askQuestion()">Ask</button>
+                <div id="askLoader" class="loader">Thinking...</div>
+                <div id="askResult" class="result-box hidden"></div>
+            </div>
+
+            <!-- Search Tab -->
+            <div id="tab-search" class="tab-content hidden">
+                <h2>Search Paper</h2>
+                <input type="text" id="searchInput" placeholder="e.g. specific keywords or phrases">
+                <button onclick="searchPaper()">Search</button>
+                <div id="searchLoader" class="loader">Searching vector store...</div>
+                <div id="searchResult" class="result-box hidden"></div>
+            </div>
+
+            <!-- Review Tab -->
+            <div id="tab-review" class="tab-content hidden">
+                <h2>Comprehensive Review</h2>
+                <p style="margin-bottom: 1rem; color: var(--text-light);">Generate an AI summary and review of the entire document.</p>
+                <button onclick="generateReview()">Generate Review</button>
+                <div id="reviewLoader" class="loader">Generating review... this might take a while.</div>
+                <div id="reviewResult" class="result-box hidden"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Configuration: Update this if your FastAPI server runs on a different port/host
+    const API_BASE = "http://localhost:8000/papers";
+    let currentPaperId = null;
+    let currentFilename = null;
+
+    // Load the papers list as soon as the page opens
+    window.addEventListener("DOMContentLoaded", loadPapersList);
+
+    // --- UPLOAD ---
+    async function uploadPaper() {
+        const fileInput = document.getElementById('pdfFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loader = document.getElementById('uploadLoader');
+        const successBox = document.getElementById('uploadSuccess');
+
+        if (!fileInput.files[0]) {
+            alert("Please select a PDF file first.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        uploadBtn.disabled = true;
+        loader.style.display = 'block';
+        successBox.classList.add('hidden');
+
+        try {
+            const response = await fetch(`${API_BASE}/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                currentPaperId = data.paper_id;
+                currentFilename = data.filename;
+
+                successBox.innerHTML = `
+                    <div>
+                        <strong>Success!</strong> Paper processed successfully.<br>
+                        ID: <code>${data.paper_id}</code><br>
+                        Pages: ${data.pages} | Chunks Created: ${data.chunks}
+                    </div>
+                `;
+                successBox.classList.remove('hidden');
+
+                // Show the workspace for this newly uploaded paper
+                selectPaper(data.paper_id, data.filename);
+
+                // Refresh the papers list so the new upload shows up immediately
+                loadPapersList();
+            } else {
+                alert(`Error: ${JSON.stringify(data)}`);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Failed to connect to the server. Is FastAPI running and CORS enabled?");
+        } finally {
+            uploadBtn.disabled = false;
+            loader.style.display = 'none';
+        }
+    }
+
+    // --- PAPERS LIST ---
+    async function loadPapersList() {
+        const summaryEl = document.getElementById('papersSummary');
+        const listEl = document.getElementById('papersList');
+
+        summaryEl.textContent = "Loading...";
+        listEl.innerHTML = "";
+
+        try {
+            const response = await fetch(`${API_BASE}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                summaryEl.textContent = "Failed to load papers list.";
+                return;
+            }
+
+            summaryEl.innerHTML = `<strong>${data.total}</strong> paper(s) uploaded so far.`;
+
+            if (data.total === 0) {
+                listEl.innerHTML = `<p style="color: var(--text-light);">No papers uploaded yet. Upload one above to get started.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = "";
+
+            data.papers.forEach(paper => {
+                const item = document.createElement("div");
+                item.className = "paper-item" + (paper.paper_id === currentPaperId ? " active-paper" : "");
+
+                item.innerHTML = `
+                    <div class="paper-item-info">
+                        <div class="paper-item-name" title="${paper.filename}">${paper.filename}</div>
+                        <div class="paper-item-meta">${paper.chunk_count} chunks &middot; ID: ${paper.paper_id.slice(0, 8)}...</div>
+                    </div>
+                    <div class="paper-item-actions">
+                        <button class="secondary" onclick="selectPaper('${paper.paper_id}', '${paper.filename.replace(/'/g, "\\'")}')">Use</button>
+                        <button class="secondary" onclick="viewChunks('${paper.paper_id}', '${paper.filename.replace(/'/g, "\\'")}')">View Chunks</button>
+                    </div>
+                `;
+
+                listEl.appendChild(item);
+            });
+
+        } catch (error) {
+            console.error(error);
+            summaryEl.textContent = "Failed to connect to the server.";
+        }
+    }
+
+    // Select a paper as the active one for Ask/Search/Review
+    function selectPaper(paperId, filename) {
+        currentPaperId = paperId;
+        currentFilename = filename;
+
+        document.getElementById('workspace').classList.remove('hidden');
+        document.getElementById('activePaperLabel').textContent = `Active paper: ${filename}`;
+
+        // Highlight it in the list too
+        loadPapersList();
+
+        // Scroll to workspace so the user sees it switched
+        document.getElementById('workspace').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // --- CHUNK VIEWER (for verifying extracted content) ---
+    async function viewChunks(paperId, filename) {
+        const section = document.getElementById('chunkViewerSection');
+        const title = document.getElementById('chunkViewerTitle');
+        const loader = document.getElementById('chunkViewerLoader');
+        const listEl = document.getElementById('chunkViewerList');
+
+        section.classList.remove('hidden');
+        title.textContent = `Chunks — ${filename}`;
+        loader.style.display = 'block';
+        listEl.innerHTML = "";
+
+        section.scrollIntoView({ behavior: 'smooth' });
+
+        try {
+            const response = await fetch(`${API_BASE}/${paperId}/chunks`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                listEl.innerHTML = `<p style="color:red;">Error: ${JSON.stringify(data)}</p>`;
+                return;
+            }
+
+            if (data.chunks.length === 0) {
+                listEl.innerHTML = `<p style="color: var(--text-light);">No chunks found for this paper.</p>`;
+                return;
+            }
+
+            listEl.innerHTML = "";
+
+            data.chunks.forEach((chunk, index) => {
+                const meta = chunk.metadata || {};
+                const div = document.createElement("div");
+                div.className = "chunk-item";
+
+                div.innerHTML = `
+                    <div class="chunk-item-header">
+                        <span class="chunk-badge">Chunk ${index + 1}</span>
+                        <span class="chunk-badge">Page ${meta.page ?? "?"}</span>
+                        <span class="chunk-badge">${meta.section ?? "unknown section"}</span>
+                    </div>
+                    <div class="chunk-text"></div>
+                `;
+
+                // Set text via textContent to avoid any HTML injection issues
+                div.querySelector(".chunk-text").textContent = chunk.text;
+
+                listEl.appendChild(div);
+            });
+
+        } catch (error) {
+            console.error(error);
+            listEl.innerHTML = `<p style="color:red;">Failed to connect to the server.</p>`;
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    function closeChunkViewer() {
+        document.getElementById('chunkViewerSection').classList.add('hidden');
+    }
+
+    // --- ASK QUESTION ---
+    async function askQuestion() {
+        if (!currentPaperId) return alert("Upload or select a paper first.");
+
+        const question = document.getElementById('askInput').value;
+        if (!question) return alert("Please enter a question.");
+
+        const loader = document.getElementById('askLoader');
+        const resultBox = document.getElementById('askResult');
+
+        loader.style.display = 'block';
+        resultBox.classList.add('hidden');
+
+        try {
+            const url = `${API_BASE}/${currentPaperId}/ask`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question: question })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                resultBox.innerHTML = `<strong>Answer:</strong>\n${data.answer}\n\n<strong>Sources:</strong>\n${JSON.stringify(data.sources, null, 2)}`;
+                resultBox.classList.remove('hidden');
+            } else {
+                alert(`Error: ${JSON.stringify(data)}`);
+            }
+        } catch (error) {
+            alert("Failed to connect to the server.");
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    // --- SEARCH ---
+    async function searchPaper() {
+        if (!currentPaperId) return alert("Upload or select a paper first.");
+
+        const question = document.getElementById('searchInput').value;
+        if (!question) return alert("Please enter a search query.");
+
+        const loader = document.getElementById('searchLoader');
+        const resultBox = document.getElementById('searchResult');
+
+        loader.style.display = 'block';
+        resultBox.classList.add('hidden');
+
+        try {
+            const url = `${API_BASE}/${currentPaperId}/search`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ question: question })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                resultBox.innerHTML = `<strong>Search Results:</strong>\n${JSON.stringify(data.results, null, 2)}`;
+                resultBox.classList.remove('hidden');
+            } else {
+                alert(`Error: ${JSON.stringify(data)}`);
+            }
+        } catch (error) {
+            alert("Failed to connect to the server.");
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    // --- REVIEW ---
+    async function generateReview() {
+
+        if (!currentPaperId) {
+            return alert("Upload or select a paper first.");
+        }
+
+        const loader =
+            document.getElementById("reviewLoader");
+
+        const resultBox =
+            document.getElementById("reviewResult");
+
+        loader.style.display = "block";
+        resultBox.classList.add("hidden");
+
+        try {
+
+            const response = await fetch(
+                `${API_BASE}/${currentPaperId}/review`,
+                {
+                    method: "POST"
+                }
+            );
+
+            const data = await response.json();
+
+            console.log("Review response:", data);
+
+            if (!response.ok) {
+                throw new Error(
+                    JSON.stringify(data)
+                );
+            }
+
+
+            // =========================================
+            // Review object
+            // =========================================
+
+            const review = data.review;
+
+
+            // =========================================
+            // Create HTML
+            // =========================================
+
+            let html = "";
+
+
+            // Summary
+
+            html += `
+                <h3>📄 Summary</h3>
+                <p>${review.summary || "Not available"}</p>
+                <hr>
+            `;
+
+
+            // Methodology
+
+            html += `
+                <h3>🔬 Methodology</h3>
+                <p>${review.methodology || "Not available"}</p>
+                <hr>
+            `;
+
+
+            // Results
+
+            html += `
+                <h3>📊 Results</h3>
+                <p>${review.results || "Not available"}</p>
+                <hr>
+            `;
+
+
+            // Strengths
+
+            html += `
+                <h3>✅ Strengths</h3>
+                <ul>
+            `;
+
+            if (Array.isArray(review.strengths)) {
+
+                review.strengths.forEach(
+                    strength => {
+
+                        html += `
+                            <li>${strength}</li>
+                        `;
+                    }
+                );
+
+            }
+
+            html += `
+                </ul>
+                <hr>
+            `;
+
+
+            // Weaknesses
+
+            html += `
+                <h3>⚠️ Weaknesses</h3>
+                <ul>
+            `;
+
+            if (Array.isArray(review.weaknesses)) {
+
+                review.weaknesses.forEach(
+                    weakness => {
+
+                        html += `
+                            <li>${weakness}</li>
+                        `;
+                    }
+                );
+
+            }
+
+            html += `
+                </ul>
+                <hr>
+            `;
+
+
+            // Originality
+
+            html += `
+                <h3>💡 Originality</h3>
+                <p>${review.originality || "Not available"}</p>
+                <hr>
+            `;
+
+
+            // Writing quality
+
+            html += `
+                <h3>✍️ Writing Quality</h3>
+                <p>${review.writing_quality || "Not available"}</p>
+                <hr>
+            `;
+
+
+            // References
+
+            html += `
+                <h3>📚 References</h3>
+                <p>${review.references || "Not available"}</p>
+                <hr>
+            `;
+
+
+            // Structure
+
+            html += `
+                <h3>🏗️ Structure</h3>
+                <p>${review.structure || "Not available"}</p>
+                <hr>
+            `;
+
+
+            // Overall assessment
+
+            html += `
+                <h3>⭐ Overall Assessment</h3>
+                <p>${review.overall_assessment || "Not available"}</p>
+            `;
+
+
+            // =========================================
+            // Sources
+            // =========================================
+
+            html += `
+                <hr>
+                <h3>📚 Sources Used</h3>
+                <ul>
+            `;
+
+            if (Array.isArray(data.sources)) {
+
+                data.sources.forEach(
+                    source => {
+
+                        html += `
+                            <li>
+                                Page ${source.page || "?"}
+                                — ${source.section || "Unknown section"}
+                            </li>
+                        `;
+                    }
+                );
+            }
+
+            html += `
+                </ul>
+            `;
+
+
+            // =========================================
+            // Display
+            // =========================================
+
+            resultBox.innerHTML = html;
+
+            resultBox.classList.remove(
+                "hidden"
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Review error:",
+                error
+            );
+
+            resultBox.innerHTML = `
+                <strong>❌ Error:</strong>
+                <p>${error.message}</p>
+            `;
+
+            resultBox.classList.remove(
+                "hidden"
+            );
+
+        }
+
+        finally {
+
+            loader.style.display = "none";
+
+        }
+    }
+    // --- UI HELPERS ---
+    function switchTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+        // Show selected tab
+        document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+        // Highlight active button
+        const btns = document.querySelectorAll('.tab-btn');
+        if(tabName === 'ask') btns[0].classList.add('active');
+        if(tabName === 'search') btns[1].classList.add('active');
+        if(tabName === 'review') btns[2].classList.add('active');
+    }
+</script>
+
+</body>
+</html>
